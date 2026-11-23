@@ -12,6 +12,44 @@ pipeline {
                 checkout scm
             }
         }
+        stage('User Story Traceability') {
+    steps {
+        script {
+
+            def commitSubject = bat(
+                returnStdout: true,
+                script: 'git log -1 --format=%%s'
+            ).trim()
+
+            def commitId = bat(
+                returnStdout: true,
+                script: 'git rev-parse --short HEAD'
+            ).trim()
+
+            def storyMatch = (commitSubject =~ /(US-\d+)/)
+            def issueMatch = (commitSubject =~ /#(\d+)/)
+
+            def storyId = storyMatch.find() ?
+                storyMatch.group(1) : 'Not provided'
+
+            def issueId = issueMatch.find() ?
+                '#' + issueMatch.group(1) : 'Not provided'
+
+            currentBuild.displayName =
+                "#${env.BUILD_NUMBER} - ${storyId}"
+
+            echo "========== USER STORY DETAILS =========="
+            echo "User Story ID: ${storyId}"
+            echo "GitHub Issue: ${issueId}"
+            echo "Commit Message: ${commitSubject}"
+            echo "Commit ID: ${commitId}"
+            echo "Jenkins Build: ${env.BUILD_NUMBER}"
+            echo "Build URL: ${env.BUILD_URL}"
+            echo "========================================"
+
+        }
+    }
+}
 
         stage('Check Tools') {
             steps {
